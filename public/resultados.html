@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex" />
+  <title>Placar · SYNTHETICA 2047</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800&family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/style.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>◈</text></svg>" />
+  <script src="/qrcode.js"></script>
+</head>
+<body>
+  <main class="conteudo placar" style="max-width:1400px">
+    <header class="topo">
+      <span class="selo">VR CODE ARENA · 2047 · Placar</span>
+      <h1 class="titulo">SYNTHETICA</h1>
+    </header>
+
+    <!-- login -->
+    <section id="login" class="login bloco">
+      <h3>Área da organização</h3>
+      <form id="formLogin">
+        <input id="senha" type="password" placeholder="Senha do painel" autocomplete="current-password" required />
+        <button class="btn" type="submit" style="width:100%">Entrar</button>
+      </form>
+      <p class="erro" id="erroLogin"></p>
+    </section>
+
+    <!-- painel -->
+    <section id="painel" class="oculto">
+      <div class="acesse">
+        <span class="acesse-rotulo">Vote pelo celular · acesse</span>
+        <span class="acesse-url" id="urlGrande"></span>
+      </div>
+      <div id="alertaDev" class="alerta-dev oculto">
+        Modo de teste: banco de dados não configurado. Os votos ficam só na memória e podem sumir.
+        Conecte o Upstash Redis na Vercel (veja o README).
+      </div>
+      <div class="painel">
+        <aside class="lateral">
+          <div class="bloco">
+            <h3>QR Code</h3>
+            <div class="qr" id="qr"></div>
+            <div class="url-voto" id="urlVoto"></div>
+          </div>
+          <div class="bloco">
+            <h3>Votos registrados</h3>
+            <div class="total" id="total">0</div>
+            <div id="aviso" class="aviso" style="margin:14px 0 0;justify-content:flex-start"><span class="pulso"></span><span id="statusTxt">—</span></div>
+          </div>
+          <div class="bloco controles">
+            <h3>Controles</h3>
+            <button class="btn" id="btnAbrir" type="button">Abrir votação</button>
+            <button class="btn fantasma" id="btnFechar" type="button">Encerrar votação</button>
+            <button class="btn fantasma" id="btnOcultar" type="button">Ocultar placar</button>
+            <button class="btn perigo" id="btnZerar" type="button">Zerar e nova rodada</button>
+            <p class="erro" id="erroPainel"></p>
+          </div>
+        </aside>
+
+        <div class="tanques" id="tanques"></div>
+      </div>
+    </section>
+  </main>
+
+  <script src="/ambiente.js"></script>
+  <script>
+    const $ = (s) => document.querySelector(s);
+    const ss = {
+      get(k) { try { return sessionStorage.getItem(k); } catch { return null; } },
+      set(k, v) { try { sessionStorage.setItem(k, v); } catch {} },
+    };
+    const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+    let senha = ss.get('syn_admin') || '';
+    let oculto = ss.get('syn_ocultar') === '1';
+    let montado = false;
+    let timer = null;
+
+    // QR code com o link da página de votação
+    const urlVoto = location.origin + '/';
+    const urlCurta = location.host;
+    $('#urlVoto').textContent = 'ou aponte a câmera para o código';
+    $('#urlGrande').textContent = urlCurta;
+    try {
+      const qr = qrcode(0, 'M');
+      qr.addData(urlVoto);
+      qr.make();
+      $('#qr').innerHTML = qr.createSvgTag({ cellSize: 6, margin: 0, scalable: true });
+    } catch { $('#qr').textContent = urlVoto; }
+
+    async function api(path, opts = {}) {
+      const r = await fetch(path, {
+        ...opts,
+        cache: 'no-store',
+        headers: { 'Content-Type': 'application/json', 'x-admin-key': senha, ...(opts.headers || {}) },
+      });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) { const e = new Error(d.error || 'Erro'); e.status = r.status; throw e; }
+      return d;
+    }
+
+    function montar(teams) {
+      $('#tanques').innerHTML = teams.map((t, i) => `
+        <div class="tanque" style="--cor:${esc(t.cor)}" data-id="${esc(t.id)}">
+          <div class="tubo">
+            <div class="coroa oculto">👑</div>
+            <div class="agua"></div>
+            <div class="valor"><span class="n">0</span><span class="pct">0%</span></div>
+          </div>
+          <div class="nome"><span>${String(i + 1).padStart(2, '0')} · ${esc(t.equipe)}</span><b>${esc(t.portal)}</b></div>
+        </div>`).join('');
+      montado = true;
+    }
+
+    function atualizar(d) {
+      if (!montado) montar(d.teams);
+      const max = Math.max(1, ...Object.values(d.counts));
+      const lider = Math.max(...Object.values(d.counts));
+      $('#tanques').classList.toggle('escondido', oculto);
+      d.teams.forEach((t) => {
+        const el = document.querySelector(`.tanque[data-id="${CSS.escape(t.id)}"]`);
+        const n = d.counts[t.id] || 0;
+        const pct = d.total ? Math.round((n / d.total) * 100) : 0;
+        el.querySelector('.agua').style.height = (n / max) * 88 + '%';
+        el.querySelector('.n').textContent = n;
+        el.querySelector('.pct').textContent = pct + '%';
+        el.querySelector('.coroa').classList.toggle('oculto', !(d.status === 'closed' && lider > 0 && n === lider && !oculto));
+      });
+      $('#total').textContent = d.total;
+      const aberto = d.status === 'open';
+      $('#aviso').classList.toggle('fechado', !aberto);
+      $('#statusTxt').textContent = aberto ? 'Votação aberta' : 'Votação fechada';
+      $('#btnAbrir').disabled = aberto;
+      $('#btnFechar').disabled = !aberto;
+      $('#btnOcultar').textContent = oculto ? 'Mostrar placar' : 'Ocultar placar';
+      $('#alertaDev').classList.toggle('oculto', !d.memoryMode);
+    }
+
+    async function carregar() {
+      try {
+        atualizar(await api('/api/results'));
+        $('#erroPainel').textContent = '';
+      } catch (e) {
+        if (e.status === 401) return sair('Senha incorreta.');
+        $('#erroPainel').textContent = 'Sem conexão. Tentando de novo…';
+      }
+    }
+
+    function entrar() {
+      $('#login').classList.add('oculto');
+      $('#painel').classList.remove('oculto');
+      carregar();
+      clearInterval(timer);
+      timer = setInterval(carregar, 2500);
+    }
+    function sair(msg) {
+      clearInterval(timer);
+      senha = ''; ss.set('syn_admin', '');
+      $('#painel').classList.add('oculto');
+      $('#login').classList.remove('oculto');
+      $('#erroLogin').textContent = msg || '';
+    }
+
+    $('#formLogin').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      senha = $('#senha').value;
+      try {
+        await api('/api/results');
+        ss.set('syn_admin', senha);
+        $('#erroLogin').textContent = '';
+        entrar();
+      } catch (err) {
+        $('#erroLogin').textContent = err.status === 401 ? 'Senha incorreta.' : 'Não foi possível conectar.';
+      }
+    });
+
+    async function acao(action) {
+      try { await api('/api/admin', { method: 'POST', body: JSON.stringify({ action }) }); await carregar(); }
+      catch (e) { $('#erroPainel').textContent = e.message; }
+    }
+    $('#btnAbrir').onclick = () => acao('open');
+    $('#btnFechar').onclick = () => acao('close');
+    $('#btnZerar').onclick = () => { if (confirm('Zerar todos os votos e começar uma nova rodada?')) acao('reset'); };
+    $('#btnOcultar').onclick = () => { oculto = !oculto; ss.set('syn_ocultar', oculto ? '1' : '0'); carregar(); };
+
+    if (senha) entrar();
+  </script>
+</body>
+</html>

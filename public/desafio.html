@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#0d0820" />
+  <title>CODE DROP · SYNTHETICA 2047</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800&family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/style.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>◈</text></svg>" />
+  <style>
+    /* ---------- tela única, sem rolagem (telão) ---------- */
+    html, body { height: 100%; }
+    .tela {
+      position: relative; z-index: 1; height: 100vh; max-width: 1760px; margin: 0 auto;
+      padding: 3vh 3vw; display: grid; grid-template-columns: 0.85fr 1.15fr; gap: 3vw; align-items: center;
+    }
+    @media (min-width: 901px) { body { overflow: hidden; } }
+    @media (max-width: 900px) { .tela { height: auto; grid-template-columns: 1fr; padding: 24px 16px 48px; } }
+
+    /* ---------- enunciado ---------- */
+    .chamada { display: flex; flex-direction: column; gap: 2.2vh; }
+    .chamada .selo { align-self: flex-start; }
+    .marca { font-family: var(--fonte-titulo); font-weight: 800; letter-spacing: .14em; font-size: clamp(1rem, 2.4vh, 1.7rem);
+      background: linear-gradient(90deg, var(--ciano), var(--magenta)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .marca em { font-style: normal; font-family: var(--mono); color: var(--acido); -webkit-text-fill-color: var(--acido); letter-spacing: .3em; margin-left: .5em; font-weight: 500; }
+    .missao {
+      font-family: var(--fonte-titulo); font-weight: 800; line-height: 1; letter-spacing: .02em;
+      font-size: clamp(2.2rem, 8vh, 6rem); color: var(--cromo);
+      text-shadow: -2px 0 0 rgba(255,61,242,.6), 2px 0 0 rgba(34,225,255,.6), 0 0 34px rgba(255,61,242,.35);
+    }
+    .missao small {
+      display: block; margin-bottom: 1.4vh; font-family: var(--mono); font-size: clamp(.8rem, 1.8vh, 1.2rem);
+      letter-spacing: .32em; text-transform: uppercase; color: var(--acido); font-weight: 500; text-shadow: none;
+    }
+    .texto { font-size: clamp(1.05rem, 3vh, 2rem); line-height: 1.42; }
+    .texto strong { color: var(--ciano); font-weight: 700; }
+    .itens { display: flex; flex-wrap: wrap; gap: 1vh .6vw; align-items: center; }
+    .itens .rot { font-family: var(--mono); font-size: clamp(.75rem, 1.6vh, 1rem); color: var(--texto-suave); letter-spacing: .15em; text-transform: uppercase; margin-right: .4vw; }
+    .item {
+      --cor: var(--ciano);
+      padding: .8vh 1vw; border-radius: 6px; font-weight: 600; font-size: clamp(.85rem, 2vh, 1.25rem);
+      color: var(--cromo); border: 1px solid color-mix(in srgb, var(--cor) 70%, transparent);
+      background: color-mix(in srgb, var(--cor) 14%, transparent);
+      box-shadow: 0 0 20px color-mix(in srgb, var(--cor) 22%, transparent);
+    }
+    .provocacao { color: var(--magenta); font-style: italic; font-size: clamp(1rem, 2.7vh, 1.8rem); line-height: 1.4; }
+    .valendo {
+      font-family: var(--fonte-titulo); font-weight: 800; letter-spacing: .08em;
+      font-size: clamp(2rem, 6vh, 4.4rem); line-height: 1; color: var(--acido);
+      text-shadow: 0 0 26px rgba(198, 255, 61, .55);
+    }
+
+    /* ---------- inspiração ---------- */
+    .inspiracao { display: flex; flex-direction: column; gap: 1.4vh; min-height: 0; }
+    .inspiracao .rotulo { font-family: var(--mono); font-size: clamp(.75rem, 1.7vh, 1.1rem); letter-spacing: .26em; text-transform: uppercase; color: var(--texto-suave); }
+    .inspiracao .rotulo b { color: var(--ciano); font-weight: 500; }
+    .janela {
+      border-radius: 14px; overflow: hidden; border: 1px solid var(--vidro-borda);
+      box-shadow: 0 30px 80px rgba(0,0,0,.6), 0 0 60px rgba(255,61,242,.12);
+      background: #0b0718;
+    }
+    .barra { display: flex; align-items: center; gap: 8px; padding: 1.1vh 14px; background: rgba(255,255,255,.05); border-bottom: 1px solid var(--vidro-borda); }
+    .barra i { width: 11px; height: 11px; border-radius: 50%; background: #ff5f7a; opacity: .85; }
+    .barra i:nth-child(2) { background: #ffd166; }
+    .barra i:nth-child(3) { background: var(--acido); }
+    .barra span { margin-left: 10px; flex: 1; padding: .5vh 12px; border-radius: 6px; background: rgba(0,0,0,.35); color: var(--texto-suave); font-family: var(--mono); font-size: clamp(.65rem, 1.4vh, .95rem); }
+
+    .mood { padding: 1.8vh 1.4vw 2vh; }
+    .mood-cab { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 1.4vh; }
+    .mood-cab h3 { font-family: var(--fonte-titulo); font-weight: 800; letter-spacing: .1em; font-size: clamp(.9rem, 2.4vh, 1.6rem); color: var(--cromo); }
+    .mood-cab span { font-family: var(--mono); font-size: clamp(.6rem, 1.3vh, .85rem); color: var(--texto-suave); letter-spacing: .15em; }
+
+    .grade {
+      display: grid; gap: .8vw;
+      grid-template-columns: 1.15fr 1.15fr 1fr 1fr;
+      grid-template-rows: 15vh 15vh 13vh;
+      grid-template-areas:
+        "hero hero paleta paleta"
+        "hero hero tipo   textura"
+        "manif manif tags tags";
+    }
+    @media (max-width: 900px) {
+      .grade { grid-template-columns: 1fr 1fr; grid-template-rows: 160px 110px 110px 110px;
+        grid-template-areas: "hero hero" "paleta paleta" "tipo textura" "manif tags"; }
+    }
+    .t { position: relative; overflow: hidden; border-radius: 10px; border: 1px solid rgba(255,255,255,.1); }
+    .t .leg { position: absolute; left: 8px; bottom: 6px; font-family: var(--mono); font-size: clamp(.5rem, 1.1vh, .75rem); letter-spacing: .12em; text-transform: uppercase; color: rgba(255,255,255,.75); text-shadow: 0 1px 4px #000; }
+
+    /* hero: cidade 2047 em CSS */
+    .hero { grid-area: hero; background: linear-gradient(180deg, #1a0638 0%, #5a0f6e 45%, #ff3df2 78%, #ff9a5c 100%); }
+    .sol {
+      position: absolute; left: 50%; top: 22%; width: 38%; aspect-ratio: 1; transform: translateX(-50%); border-radius: 50%;
+      background: linear-gradient(180deg, #ffe66b, #ff5fa8 75%);
+      -webkit-mask: repeating-linear-gradient(180deg, #000 0 9%, transparent 9% 12%);
+              mask: repeating-linear-gradient(180deg, #000 0 9%, transparent 9% 12%);
+      box-shadow: 0 0 60px #ff5fa8;
+    }
+    .predios { position: absolute; left: 0; right: 0; bottom: 0; height: 62%; display: flex; align-items: flex-end; gap: 2%; padding: 0 3%; }
+    .predios b {
+      flex: 1; background:
+        repeating-linear-gradient(180deg, transparent 0 7px, rgba(34,225,255,.55) 7px 9px),
+        linear-gradient(180deg, #120626, #05020c);
+      background-size: 6px 100%, 100% 100%; background-repeat: repeat-x, no-repeat;
+      border-top: 2px solid var(--ciano); box-shadow: 0 0 12px rgba(34,225,255,.35);
+    }
+    .predios b:nth-child(2n) { border-color: var(--magenta); }
+    .chao-mini {
+      position: absolute; left: -30%; right: -30%; bottom: -8%; height: 26%;
+      background-image: linear-gradient(rgba(34,225,255,.7) 1px, transparent 1px), linear-gradient(90deg, rgba(34,225,255,.7) 1px, transparent 1px);
+      background-size: 22px 22px; transform: perspective(160px) rotateX(60deg); transform-origin: 50% 100%; background-color: #07020f;
+    }
+
+    .paleta { grid-area: paleta; display: grid; grid-template-columns: repeat(5, 1fr); }
+    .paleta div { display: flex; align-items: flex-end; padding: 6px; font-family: var(--mono); font-size: clamp(.5rem, 1.1vh, .72rem); color: rgba(0,0,0,.7); }
+    .paleta div.esc { color: rgba(255,255,255,.8); }
+
+    .tipo { grid-area: tipo; background: #f2f0ff; color: #0d0820; display: flex; flex-direction: column; justify-content: center; padding: 0 10%; }
+    .tipo b { font-family: var(--fonte-titulo); font-weight: 800; font-size: clamp(1.6rem, 5.5vh, 3.6rem); line-height: 1; }
+    .tipo span { font-family: var(--mono); font-size: clamp(.5rem, 1.1vh, .72rem); letter-spacing: .1em; margin-top: .6vh; }
+    .tipo .leg { color: rgba(13,8,32,.6); text-shadow: none; }
+
+    .textura { grid-area: textura; background:
+      conic-gradient(from 210deg at 30% 40%, #22e1ff, #c6ff3d, #ff3df2, #7b5cff, #22e1ff);
+      filter: saturate(1.1); }
+    .textura::after { content: ''; position: absolute; inset: 0; background: repeating-linear-gradient(115deg, rgba(255,255,255,.25) 0 2px, transparent 2px 9px); mix-blend-mode: overlay; }
+
+    .manif { grid-area: manif; background: linear-gradient(135deg, #160b33, #0b0718); display: flex; align-items: center; padding: 0 5%; }
+    .manif p { font-family: var(--fonte); font-weight: 700; font-size: clamp(.8rem, 2.2vh, 1.45rem); line-height: 1.3; color: var(--cromo); }
+    .manif p em { font-style: normal; color: var(--acido); }
+
+    .tags { grid-area: tags; background: rgba(255,255,255,.03); display: flex; flex-wrap: wrap; align-content: center; gap: .6vh .4vw; padding: 0 4%; }
+    .tags span { font-family: var(--mono); font-size: clamp(.55rem, 1.35vh, .9rem); padding: .4vh .5vw; border-radius: 4px; border: 1px solid rgba(34,225,255,.45); color: var(--ciano); }
+    .tags span:nth-child(2n) { border-color: rgba(255,61,242,.5); color: #ff8ef7; }
+
+    .nota { color: var(--texto-suave); font-size: clamp(.75rem, 1.7vh, 1.1rem); text-align: center; }
+  </style>
+</head>
+<body>
+  <main class="tela">
+    <!-- ===== enunciado ===== -->
+    <section class="chamada">
+      <span class="selo">VR CODE ARENA · CODE DROP</span>
+      <span class="marca">SYNTHETICA<em>2047</em></span>
+      <h1 class="missao"><small>Novo desafio</small>Moodboard 2047</h1>
+
+      <p class="texto">Com o poder das <strong>IAs generativas</strong>, transformem o Portal Synthetica em um moodboard que represente sua identidade e seu universo em 2047.</p>
+
+      <div class="itens" aria-label="O que um moodboard pode ter">
+        <span class="rot">Pode ter</span>
+        <span class="item" style="--cor:#22e1ff">Imagens geradas</span>
+        <span class="item" style="--cor:#ff3df2">Paleta</span>
+        <span class="item" style="--cor:#c6ff3d">Tipografia</span>
+        <span class="item" style="--cor:#7b5cff">Texturas</span>
+        <span class="item" style="--cor:#ffd166">Palavras-chave</span>
+      </div>
+
+      <p class="provocacao">Não queremos apenas imagens bonitas. Queremos enxergar o futuro que vocês criaram!</p>
+      <div class="valendo">Valendo!</div>
+    </section>
+
+    <!-- ===== inspiração ===== -->
+    <section class="inspiracao" aria-label="Inspiração">
+      <div class="rotulo"><b>Inspiração</b> · um exemplo do que dá para fazer</div>
+
+      <div class="janela">
+        <div class="barra"><i></i><i></i><i></i><span>portal-synthetica.vercel.app/moodboard</span></div>
+
+        <div class="mood">
+          <div class="mood-cab"><h3>NEO·SAMPA 2047</h3><span>MOODBOARD / IDENTIDADE</span></div>
+
+          <div class="grade">
+            <div class="t hero" aria-label="Imagem: cidade neon em 2047">
+              <div class="sol"></div>
+              <div class="chao-mini"></div>
+              <div class="predios"><b style="height:55%"></b><b style="height:80%"></b><b style="height:40%"></b><b style="height:95%"></b><b style="height:62%"></b><b style="height:74%"></b><b style="height:48%"></b><b style="height:88%"></b></div>
+              <span class="leg">img gerada · cidade vertical</span>
+            </div>
+
+            <div class="t paleta" aria-label="Paleta de cores">
+              <div class="esc" style="background:#0d0820">#0D0820</div>
+              <div class="esc" style="background:#7b5cff">#7B5CFF</div>
+              <div style="background:#22e1ff">#22E1FF</div>
+              <div style="background:#ff3df2">#FF3DF2</div>
+              <div style="background:#c6ff3d">#C6FF3D</div>
+            </div>
+
+            <div class="t tipo" aria-label="Tipografia">
+              <b>Aa</b><span>ORBITRON / SPACE GROTESK</span>
+            </div>
+
+            <div class="t textura" aria-label="Textura">
+              <span class="leg">material · vidro holográfico</span>
+            </div>
+
+            <div class="t manif" aria-label="Manifesto">
+              <p>"Em 2047, a tecnologia deixou de ser tela: <em>virou pele, ar e cidade.</em>"</p>
+            </div>
+
+            <div class="t tags" aria-label="Palavras-chave">
+              <span>#cidade-vertical</span><span>#IA-companheira</span><span>#neon-orgânico</span><span>#bio-hacking</span><span>#memória-coletiva</span><span>#sem-fronteiras</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <p class="nota">Cada peça conta uma parte do futuro. O universo é de vocês.</p>
+    </section>
+  </main>
+
+  <script src="/ambiente.js"></script>
+</body>
+</html>

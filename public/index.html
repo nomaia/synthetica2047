@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#031c33" />
+  <title>Votação · SYNTHETICA 2047</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800&family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/style.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>◈</text></svg>" />
+</head>
+<body>
+  <main class="conteudo">
+    <header class="topo">
+      <span class="selo">VR CODE ARENA</span>
+      <h1 class="titulo">SYNTHETICA</h1>
+      <span class="ano">2047</span>
+      <p class="subtitulo">Qual time enxergou melhor o futuro? Toque no seu favorito.</p>
+    </header>
+
+    <div id="aviso" class="aviso"><span class="pulso"></span><span id="avisoTexto">Conectando às profundezas…</span></div>
+
+    <section id="sucesso" class="sucesso oculto" aria-live="polite">
+      <div class="icone">⚡</div>
+      <h2>Voto registrado!</h2>
+      <p id="sucessoTexto">Obrigado por participar. Acompanhe o resultado nos telões.</p>
+    </section>
+
+    <section id="equipes" class="equipes" aria-label="Equipes"></section>
+
+    <p class="rodape">VR CODE ARENA · SYNTHETICA 2047 · FIAP</p>
+  </main>
+
+  <div id="modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitulo">
+    <div class="caixa" id="modalCaixa">
+      <div class="numero" id="modalNumero">01</div>
+      <h3 id="modalTitulo">Confirmar voto?</h3>
+      <p id="modalTexto">Depois de confirmado, não é possível trocar.</p>
+      <div class="linha">
+        <button class="btn fantasma" id="btnCancelar" type="button">Voltar</button>
+        <button class="btn cor" id="btnConfirmar" type="button">Confirmar voto</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/ambiente.js"></script>
+  <script>
+    const $ = (s) => document.querySelector(s);
+    const store = {
+      get(k) { try { return localStorage.getItem(k); } catch { return null; } },
+      set(k, v) { try { localStorage.setItem(k, v); } catch {} },
+    };
+
+    let voterId = store.get('syn_vid');
+    if (!voterId) {
+      voterId = (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2));
+      store.set('syn_vid', voterId);
+    }
+
+    let estado = null;
+    let escolha = null;
+    let enviando = false;
+
+    const pad = (n) => String(n).padStart(2, '0');
+    const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+    function votoSalvo() {
+      const r = store.get('syn_votado_round');
+      return estado && r === String(estado.round) ? store.get('syn_votado_team') : null;
+    }
+
+    function render() {
+      const aviso = $('#aviso'), txt = $('#avisoTexto');
+      const jaVotou = votoSalvo();
+      const aberto = estado.status === 'open';
+
+      aviso.classList.toggle('fechado', !aberto && !jaVotou);
+      aviso.classList.toggle('oculto', !!jaVotou);
+      txt.textContent = aberto ? 'Votação aberta! Escolha um dos times.' : 'A votação ainda não está aberta. Esta tela atualiza sozinha.';
+
+      $('#equipes').innerHTML = estado.teams.map((t, i) => `
+        <button class="card ${jaVotou ? (jaVotou === t.id ? 'escolhido' : 'apagado') : ''}"
+                style="--cor:${esc(t.cor)}" data-id="${esc(t.id)}" type="button"
+                ${!aberto || jaVotou ? 'disabled' : ''} aria-label="Votar em ${esc(t.portal)}, ${esc(t.equipe)}">
+          <span class="numero">${pad(i + 1)}</span>
+          <span class="equipe">${esc(t.equipe)}</span>
+          <h2>${esc(t.portal)}</h2>
+          <p>${esc(t.descricao)}</p>
+          <span class="acoes">
+            ${t.url ? `<a class="link-portal" href="${esc(t.url)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">Ver projeto ↗</a>` : '<span></span>'}
+            ${jaVotou && jaVotou !== t.id ? '' : `<span class="btn cor" aria-hidden="true">${jaVotou === t.id ? 'Seu voto ✓' : 'Votar'}</span>`}
+          </span>
+        </button>`).join('');
+
+      const sucesso = $('#sucesso');
+      sucesso.classList.toggle('oculto', !jaVotou);
+      if (jaVotou) {
+        const t = estado.teams.find((x) => x.id === jaVotou);
+        $('#sucessoTexto').textContent = t
+          ? `Você votou em ${t.portal} (${t.equipe}). Acompanhe o resultado nos telões!`
+          : 'Obrigado por participar. Acompanhe o resultado nos telões!';
+      }
+    }
+
+    async function carregar() {
+      try {
+        const r = await fetch('/api/state', { cache: 'no-store' });
+        const novo = await r.json();
+        if (!r.ok) throw new Error(novo.error);
+        const mudou = !estado || estado.status !== novo.status || estado.round !== novo.round;
+        estado = novo;
+        if (mudou && !$('#modal').classList.contains('aberto')) render();
+      } catch (e) {
+        $('#avisoTexto').textContent = 'Sem conexão com o servidor. Tentando de novo…';
+      }
+    }
+
+    $('#equipes').addEventListener('click', (e) => {
+      const card = e.target.closest('.card');
+      if (!card || card.disabled) return;
+      const i = estado.teams.findIndex((t) => t.id === card.dataset.id);
+      escolha = estado.teams[i];
+      $('#modalCaixa').style.setProperty('--cor', escolha.cor);
+      $('#modalNumero').textContent = pad(i + 1);
+      $('#modalTitulo').textContent = `Votar em ${escolha.portal}?`;
+      $('#modalTexto').textContent = `${escolha.equipe} · Depois de confirmado, não é possível trocar o voto.`;
+      $('#modal').classList.add('aberto');
+      $('#btnConfirmar').focus();
+    });
+
+    function fecharModal() { $('#modal').classList.remove('aberto'); escolha = null; }
+    $('#btnCancelar').addEventListener('click', fecharModal);
+    $('#modal').addEventListener('click', (e) => { if (e.target.id === 'modal') fecharModal(); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') fecharModal(); });
+
+    $('#btnConfirmar').addEventListener('click', async () => {
+      if (!escolha || enviando) return;
+      enviando = true;
+      const btn = $('#btnConfirmar');
+      btn.disabled = true; btn.textContent = 'Enviando…';
+      try {
+        const r = await fetch('/api/vote', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ team: escolha.id, voterId }),
+        });
+        const d = await r.json();
+        if (r.ok || d.code === 'already') {
+          store.set('syn_votado_round', String(d.round ?? estado.round));
+          store.set('syn_votado_team', r.ok ? escolha.id : (d.team || escolha.id));
+          if (r.ok) window.rajadaBolhas?.();
+          else alertaInline('Este aparelho já tinha votado nesta rodada.');
+        } else if (d.code === 'closed') {
+          estado.status = 'closed';
+          alertaInline('A votação está fechada no momento.');
+        } else {
+          alertaInline(d.error || 'Não foi possível votar. Tente de novo.');
+        }
+      } catch {
+        alertaInline('Falha de conexão. Tente de novo.');
+      } finally {
+        enviando = false;
+        btn.disabled = false; btn.textContent = 'Confirmar voto';
+        fecharModal();
+        render();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    });
+
+    function alertaInline(msg) {
+      setTimeout(() => {
+        const aviso = $('#aviso');
+        aviso.classList.remove('oculto');
+        aviso.classList.add('fechado');
+        $('#avisoTexto').textContent = msg;
+      }, 0);
+    }
+
+    carregar();
+    setInterval(carregar, 4000);
+  </script>
+</body>
+</html>
