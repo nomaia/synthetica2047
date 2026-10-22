@@ -8,7 +8,7 @@ export const TEAMS = [
   {
     id: '1',
     equipe: 'Equipe 1',
-    portal: 'Time A', // nome do time (aparece em destaque)
+    portal: 'Helvéticas', // nome do time (aparece em destaque)
     descricao: '', // opcional: slogan do portal
     url: '',
     cor: '#22e1ff', // ciano neon
@@ -16,7 +16,7 @@ export const TEAMS = [
   {
     id: '2',
     equipe: 'Equipe 2',
-    portal: 'Time B', // nome do time (aparece em destaque)
+    portal: 'Resyn', // nome do time (aparece em destaque)
     descricao: '', // opcional: slogan do portal
     url: '',
     cor: '#ff3df2', // magenta neon
@@ -24,7 +24,7 @@ export const TEAMS = [
   {
     id: '3',
     equipe: 'Equipe 3',
-    portal: 'Time C', // nome do time (aparece em destaque)
+    portal: 'Apex Wheels', // nome do time (aparece em destaque)
     descricao: '', // opcional: slogan do portal
     url: '',
     cor: '#c6ff3d', // verde ácido
